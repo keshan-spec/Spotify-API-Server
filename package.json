@@ -1,13 +1,11 @@
 {
    "name": "server",
    "version": "0.0.1",
-   "description": "Awesome project developed with TypeORM.",
+   "description": "Spotify API server.",
    "devDependencies": {
-      "@types/bcryptjs": "^2.4.2",
       "@types/body-parser": "^1.19.0",
       "@types/cookie-parser": "^1.4.2",
       "@types/express": "^4.17.9",
-      "@types/graphql": "^14.5.0",
       "@types/jsonwebtoken": "^8.5.0",
       "@types/node": "^14.14.9",
       "@types/query-string": "^6.3.0",
@@ -18,24 +16,18 @@
    "dependencies": {
       "@types/cors": "^2.8.8",
       "@types/request": "^2.48.5",
-      "apollo-server-express": "^2.19.0",
-      "bcryptjs": "^2.4.3",
+      "@types/spotify-web-api-node": "^4.0.2",
       "body-parser": "^1.19.0",
       "cookie-parser": "^1.4.5",
       "cors": "^2.8.5",
       "dotenv": "^8.2.0",
       "express": "^4.17.1",
-      "graphql": "^15.4.0",
       "jsonwebtoken": "^8.5.1",
-      "mysql": "^2.18.1",
-      "pg": "^8.4.0",
       "query-string": "^6.13.7",
-      "reflect-metadata": "^0.1.10",
       "request": "^2.88.2",
-      "type-graphql": "^1.1.1",
-      "typeorm": "0.2.29"
+      "spotify-web-api-node": "^5.0.0"
    },
    "scripts": {
-      "start": "nodemon --exec ts-node --transpile-only src/index.ts"
+      "start": "nodemon --exec ts-node --transpile-only src/server.ts"
    }
 }

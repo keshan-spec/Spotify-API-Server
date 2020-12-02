@@ -1,18 +1,10 @@
-// https://www.youtube.com/watch?v=25GS0MLT8JU
-
-import "reflect-metadata";
 import cors from 'cors'
 import express from 'express';
 import querystring from 'query-string'
 import cookieParser from 'cookie-parser'
-import { ApolloServer } from 'apollo-server-express'
-import { createConnection } from "typeorm";
-import { buildSchema } from "type-graphql";
-import { UserResolver } from "./UserResolver";
 import { config } from 'dotenv';
 import { verify } from "jsonwebtoken";
-import { User } from "./entity/User";
-import { addUser, createAccessToken, createRefreshToken, sendRefreshToken, validCookies } from "./auth";
+import { addUser, createAccessToken, validCookies } from "./auth";
 import { generateRandomString, stateKey, getSpotifyTokens } from "./spotify-tokens";
 import bodyParser from 'body-parser'
 
@@ -26,23 +18,8 @@ import bodyParser from 'body-parser'
         origin: "http://localhost:3000",
         credentials: true
     }))
-    await createConnection() // connect to database
 
-    // bind context and resolvers for graphql
-    const apolloServer = new ApolloServer({
-        schema: await buildSchema({ resolvers: [UserResolver] }),
-        context: ({ res, req }) => ({ req, res })
-    })
-
-    // Root route
     app.get("/", (_req, res) => { res.send("Hello world Spotify API w/ JWT") })
-
-    // redirected route for the tokens <TEMP>
-    app.get("/auth", (req, res) => {
-        if (req.query.error) res.json({ error: req.query.error })
-        if (req.query.data) res.json({ user_password: req.query.password })
-        res.redirect("/")
-    })
 
     // refresh token route
     app.post("/refresh_token", async (req, res) => {
@@ -57,14 +34,8 @@ import bodyParser from 'body-parser'
         } catch (error) { // if the provided refresh token is invalid
             return res.send({ message: "Invalid token", ok: false, accessToken: '' })
         }
-
-        // HANDLE TOKEN
-        const user = await User.findOne({ where: { user_id: payload.userId } }) // get the user from the token payload
-        if (!user) return res.send({ message: "Invalid Payload", ok: false, accessToken: '' }) // if user is not found
-        if (user.tokenVersion !== payload.tokenVersion) return res.send({ message: "Token has been revoked", ok: false, accessToken: '' }) // if token has been revoked
-
-        // finally return a new access token if all validated
-        return res.send({ message: "Success : New token made", ok: true, accessToken: await createAccessToken(user, { req, res }) })
+        // return a new access token if all validated
+        return res.send({ message: "Successfully authenticated!", ok: true, accessToken: await createAccessToken(payload.userId, { req, res }) })
     })
 
     // redirected route to spotify login to get tokens
@@ -107,16 +78,9 @@ import bodyParser from 'body-parser'
         else {
             res.clearCookie(stateKey);
             const { access_token, refresh_token } = await getSpotifyTokens(code?.toString()!)
-            addUser({ access_token, refresh_token, code: code?.toString()! }, { res, req })
+            addUser({ access_token, refresh_token }, { res, req })
         }
     });
 
-
-    app.get("/test", async (req, res) => {
-        res.end()
-    })
-
-
-    apolloServer.applyMiddleware({ app, cors: false })
     app.listen(8888, () => console.log("Started server in port 8888"))
 })()
