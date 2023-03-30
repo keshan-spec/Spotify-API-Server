@@ -4,7 +4,7 @@ import querystring from 'query-string'
 import cookieParser from 'cookie-parser'
 import { config } from 'dotenv';
 import { verify } from "jsonwebtoken";
-import { addUser, createAccessToken, validCookies } from "./auth";
+import { addUser, createAccessToken, validCookies, corsOptionsDelegate } from "./auth";
 import { generateRandomString, stateKey, getSpotifyTokens } from "./spotify-tokens";
 import bodyParser from 'body-parser'
 
@@ -14,12 +14,12 @@ import bodyParser from 'body-parser'
     const app = express(); // create express app
     app.use(cookieParser()) // use cookie parser middleware
     app.use(bodyParser.json())
-    app.use(cors({
-        origin: "http://localhost:3000",
-        credentials: true
-    }))
+    app.use(cors(corsOptionsDelegate))
 
     app.get("/", (_req, res) => { res.send("Hello world Spotify API w/ JWT") })
+    // app.get("/", (_req, res) => {
+    //     res.sendFile(__dirname + '/build/test.html');
+    // })
 
     // refresh token route
     app.post("/refresh_token", async (req, res) => {
@@ -44,13 +44,12 @@ import bodyParser from 'body-parser'
         // check if refresh token exists in cookies
         const { valid } = validCookies(req.cookies)
         if (valid) return res.json({ message: "Already authenticated" }) // return
-
         try {
             var state = generateRandomString(16);
             res.cookie(stateKey, state);
 
             // your application requests authorization
-            var scope = 'user-read-private playlist-modify-public playlist-modify-private user-read-email';
+            var scope = 'user-read-private playlist-modify-public playlist-modify-private user-read-email user-top-read';
             res.redirect('https://accounts.spotify.com/authorize?' +
                 querystring.stringify({
                     response_type: 'code',
@@ -68,7 +67,6 @@ import bodyParser from 'body-parser'
     // redirect route from /login containing the response from spotify
     app.get('/callback', async (req, res) => {
         // your application requests refresh and access tokens
-        // after checking the state parameter
         const code = req.query.code || null;
         const state = req.query.state || null;
         const storedState = req.cookies ? req.cookies[stateKey] : null;

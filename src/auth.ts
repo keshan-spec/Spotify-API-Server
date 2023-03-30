@@ -1,6 +1,6 @@
+import { CorsOptions } from 'cors';
 import { Response, Request } from 'express'
 import { sign, verify } from "jsonwebtoken";
-import { MiddlewareFn } from "type-graphql"
 import { getAuthUser, refreshSpotifyToken } from "./spotify-tokens";
 
 export interface MyContext {
@@ -14,23 +14,12 @@ export interface AuthObj {
     access_token: string
 }
 
-// Authorization: Bearer <token>
-export const isAuthenticated: MiddlewareFn<MyContext> = ({ context }, next) => {
-    const authorization = context.req.headers['authorization']
-
-    if (!authorization) throw new Error("Not authenticated!")
-
-    try {
-        const token = authorization.split(" ")[1]
-        const payload = verify(token, process.env.ACCESS_TOKEN_SECRET!)
-        context.payload = payload as any
-
-    } catch (error) {
-        if (error.name === "TokenExpiredError") throw new Error("Token Expired!")
-        if (error.name === "JsonWebTokenError") throw new Error("Token Invalid!")
-        throw new Error(error.name)
-    }
-    return next()
+const allowlist = ['http://localhost:3000', 'http://localhost:5000']
+export const corsOptionsDelegate = function (req: Request, callback: (err: Error | null, options?: CorsOptions) => void) {
+    let corsOptions;
+    if (allowlist.indexOf(req.header('Origin')!) !== -1) corsOptions = { origin: true, credentials: true }
+    else corsOptions = { origin: false } // disable CORS for this request
+    callback(null, corsOptions) // callback expects two parameters: error and options
 }
 
 // check the token cookies are valid
